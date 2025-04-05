@@ -1,42 +1,42 @@
 use chrono::NaiveDateTime;
+use rusqlite::Connection;
 
-use nocture_tauri_lib::commands::{create_task, fetch_tasks};
-use nocture_tauri_lib::model::{Category, Priority, TaskPayload};
-use nocture_tauri_lib::db;
+use nocture_tauri_lib::{
+    migrations::run_migrations,
+    model::task::{Category, Priority, TaskPayload},
+    repository::task::SqliteTaskRepository,
+    services::task::{TaskService, TaskServiceImpl},
+};
 
+fn setup_test_service() -> impl TaskService {
+    let conn = Connection::open_in_memory().expect("Failed to create in-memory DB");
+    run_migrations(&conn).expect("Failed to run migrations");
+
+    TaskServiceImpl {
+        conn: Box::new(conn),
+        repository: SqliteTaskRepository,
+    }
+}
 #[test]
 fn test_create_and_fetch_task() {
-    db::init().expect("Failed to run migrations");
+    let service = setup_test_service();
 
-    // Buat task dummy
     let deadline = NaiveDateTime::parse_from_str("2025-04-10 23:59:00", "%Y-%m-%d %H:%M:%S").unwrap();
 
     let payload = TaskPayload {
         title: "Belajar Rust".to_string(),
-        category: Category::Study.to_string(),
-        priority: Priority::High.to_string(),
-        deadline: NaiveDateTime::parse_from_str("2025-04-10 23:59:00", "%Y-%m-%d %H:%M:%S").unwrap(),
+        category: Category::Study,
+        priority: Priority::High,
+        deadline: Some(deadline),
     };
 
-    // Jalankan create
-    let result = create_task(
-        payload.title.clone(),
-        payload.category.clone(),
-        payload.priority.clone(),
-        Some(deadline.format("%Y-%m-%d %H:%M:%S").to_string()),
-    );
-    match result {
-        Ok(_) => println!("Task created successfully."),
-        Err(e) => panic!("Failed to create task: {}", e),
-    }
+    let title = payload.title.clone(); // Simpan title sebelum payload dipindahkan
+    // Create Task
+    service.create_task(payload).expect("Failed to create task");
 
-    // Fetch dan cek apakah task muncul
-    let tasks_result = fetch_tasks();
-    match result {
-        Ok(_) => println!("Task created successfully."),
-        Err(e) => panic!("Failed to create task: {}", e),
-    }
+    // Fetch Tasks
+    let tasks = service.fetch_tasks().expect("Failed to fetch tasks");
 
-    let tasks = tasks_result.unwrap();
-    assert!(tasks.iter().any(|t| t.title == payload.title));
+    // Check Task exists
+    assert!(tasks.iter().any(|t| t.title == title));
 }
