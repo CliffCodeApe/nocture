@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "nocture",
+  "productName": "nocture-tauri",
   "version": "0.1.0",
-  "identifier": "com.nocture.app",
+  "identifier": "com.nocture-tauri.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "nocture",
+        "title": "nocture-tauri",
         "width": 800,
         "height": 600
       }
