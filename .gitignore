@@ -1,4 +1,13 @@
-# Logs
+# === Rust ===
+/target
+**/*.rs.bk
+
+# === Tauri ===
+/src-tauri/target
+/src-tauri/.cargo
+/src-tauri/Cargo.lock
+
+# === Logs ===
 logs
 *.log
 npm-debug.log*
@@ -7,12 +16,24 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# === Node / Frontend ===
 node_modules
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# === IDE / Editor files ===
+*.swp
+*.swo
+*.bak
+*~
+Thumbs.db
+/logs/
+/tmp/
+
+*.local
+
+# === Editor directories and files ===
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -22,3 +43,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# === Datanase ===
+*.db-shm
+*.db-wal
