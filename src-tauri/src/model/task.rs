@@ -1,6 +1,10 @@
+// src-tauri/src/model/task.rs
+
+// Import NaiveDateTime dari chrono dan Serialize/Deserialize dari serde
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
+// Enum untuk Kategori Task
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Category {
     Study,
@@ -8,6 +12,7 @@ pub enum Category {
     Personal,
 }
 
+// Implementasi untuk mengubah Category menjadi String
 impl ToString for Category {
     fn to_string(&self) -> String {
         match self {
@@ -18,6 +23,7 @@ impl ToString for Category {
     }
 }
 
+// Implementasi untuk mengubah String menjadi Category
 impl std::str::FromStr for Category {
     type Err = ();
 
@@ -26,11 +32,12 @@ impl std::str::FromStr for Category {
             "Study" => Ok(Category::Study),
             "Work" => Ok(Category::Work),
             "Personal" => Ok(Category::Personal),
-            _ => Err(()),
+            _ => Err(()), // Kembalikan error jika string tidak cocok
         }
     }
 }
 
+// Enum untuk Prioritas Task
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Priority {
     Low,
@@ -38,6 +45,7 @@ pub enum Priority {
     High,
 }
 
+// Implementasi untuk mengubah Priority menjadi String
 impl ToString for Priority {
     fn to_string(&self) -> String {
         match self {
@@ -48,6 +56,7 @@ impl ToString for Priority {
     }
 }
 
+// Implementasi untuk mengubah String menjadi Priority
 impl std::str::FromStr for Priority {
     type Err = ();
 
@@ -56,26 +65,31 @@ impl std::str::FromStr for Priority {
             "Low" => Ok(Priority::Low),
             "Medium" => Ok(Priority::Medium),
             "High" => Ok(Priority::High),
-            _ => Err(()),
+            _ => Err(()), // Kembalikan error jika string tidak cocok
         }
     }
 }
 
+// Struct untuk payload data saat membuat task baru (data dari frontend)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskPayload {
     pub title: String,
-    pub category: Category,
-    pub priority: Priority,
-    pub deadline: Option<NaiveDateTime>,
+    pub category: Category, // Enum Category
+    pub priority: Priority, // Enum Priority
+    // --- PERUBAHAN DIMULAI ---
+    // Terima deadline sebagai String opsional dari frontend
+    pub deadline: Option<String>,
+    // --- PERUBAHAN SELESAI ---
 }
 
+// Struct untuk representasi Task secara lengkap (termasuk data dari DB)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Task {
     pub id: i32,
     pub title: String,
     pub category: Category,
     pub priority: Priority,
-    pub deadline: Option<NaiveDateTime>,
+    pub deadline: Option<NaiveDateTime>, // Di DB tetap NaiveDateTime
     pub completed: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
