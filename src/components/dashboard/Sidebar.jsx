@@ -16,7 +16,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
         { icon: Mail, label: 'Inbox', key: 'inbox' },
         { icon: CheckSquare, label: 'Tugas', key: 'tasks' },
         { icon: Calendar, label: 'Kalender', key: 'calendar' },
-        { icon: Clock, label: 'Pomodoro', key: 'pomodoro' },
+        { icon: Clock, label: 'Timer', key: 'timer' }, // Changed from 'pomodoro' to 'timer' to match Dashboard component
     ];
 
     const bottomMenuItems = [
