@@ -1,67 +1,189 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Pencil, Trash2, Pin, PinOff, Palette, ArrowLeft, Check, X } from 'lucide-react';
 
-const NotesPage = () => {
-    const { categoryId } = useParams();
+const NotesPage = ({
+    note,
+    onBack,
+    onTogglePin,
+    onUpdateNote,
+    onDeleteNote
+}) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [showColorPicker, setShowColorPicker] = useState(false);
+    const [editableNote, setEditableNote] = useState(note || {
+        id: null,
+        title: '',
+        content: '',
+        color: 'purple',
+        isPinned: false
+    });
 
-    // Map category IDs to names and colors
-    const categories = {
-        '1': { name: 'Riset Informatika', color: 'bg-purple-700' },
-        '2': { name: 'Praktikum Cyber', color: 'bg-green-500' },
-        '3': { name: 'UNITY', color: 'bg-yellow-400' }
-    };
+    useEffect(() => {
+        if (note) {
+            setEditableNote(note);
+        }
+    }, [note]);
 
-    // Get current category
-    const currentCategory = categories[categoryId] || { name: 'Unknown Category', color: 'bg-gray-400' };
-
-    // Dummy notes
-    const notes = [
-        { id: 1, title: 'Research Paper Notes', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', date: '25 Mar 2025' },
-        { id: 2, title: 'Meeting Notes', content: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', date: '26 Mar 2025' },
-        { id: 3, title: 'Ideas for Project', content: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.', date: '27 Mar 2025' },
+    const colorOptions = [
+        { name: 'Purple', value: 'purple', class: 'bg-purple-800' },
+        { name: 'Green', value: 'green', class: 'bg-green-600' },
+        { name: 'Yellow', value: 'yellow', class: 'bg-yellow-500' },
+        { name: 'Red', value: 'red', class: 'bg-red-600' },
+        { name: 'Blue', value: 'blue', class: 'bg-blue-600' },
+        { name: 'Teal', value: 'teal', class: 'bg-teal-600' },
+        { name: 'Pink', value: 'pink', class: 'bg-pink-600' }
     ];
 
+    const handleSaveNote = () => {
+        if (editableNote.title.trim() === '') return;
+        onUpdateNote(editableNote);
+        setIsEditing(false);
+    };
+
+    const handlePinToggle = () => {
+        const updatedNote = { ...editableNote, isPinned: !editableNote.isPinned };
+        setEditableNote(updatedNote);
+        onUpdateNote(updatedNote);
+        if (onTogglePin) {
+            onTogglePin(updatedNote);
+        }
+    };
+
+    const handleColorChange = (color) => {
+        const updatedNote = { ...editableNote, color };
+        setEditableNote(updatedNote);
+        onUpdateNote(updatedNote);
+        setShowColorPicker(false);
+    };
+
+    const getColorClass = () => {
+        const colorMap = {
+            purple: 'bg-purple-800',
+            green: 'bg-green-600',
+            yellow: 'bg-yellow-500',
+            red: 'bg-red-600',
+            blue: 'bg-blue-600',
+            teal: 'bg-teal-600',
+            pink: 'bg-pink-600'
+        };
+
+        return colorMap[editableNote.color] || 'bg-purple-800';
+    };
+
     return (
-        <motion.div
-            className="p-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            <div className="flex items-center mb-6">
-                <div className={`w-4 h-4 rounded-sm ${currentCategory.color} mr-3`}></div>
-                <h1 className="text-2xl font-bold">{currentCategory.name} Notes</h1>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {notes.map(note => (
-                    <div
-                        key={note.id}
-                        className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                    >
-                        <div className={`h-2 ${currentCategory.color}`}></div>
-                        <div className="p-4">
-                            <h3 className="font-medium mb-2">{note.title}</h3>
-                            <p className="text-sm text-gray-600 mb-4 line-clamp-3">{note.content}</p>
-                            <div className="text-xs text-gray-500">{note.date}</div>
-                        </div>
+        <div className="fixed inset-0 z-50 flex ml-64">
+            <div className="relative mx-auto my-auto shadow-xl w-full h-full z-10">
+                {/* Header */}
+                <div className={`${getColorClass()} text-white p-6 flex justify-between items-center h-60`}>
+                    <div className="flex items-center">
+                        {isEditing ? (
+                            <input
+                                type="text"
+                                value={editableNote.title}
+                                onChange={(e) => setEditableNote({ ...editableNote, title: e.target.value })}
+                                className="bg-transparent border-b border-white text-2xl font-bold focus:outline-none"
+                                placeholder="Judul catatan"
+                                autoFocus
+                            />
+                        ) : (
+                            <h1 className="text-2xl font-bold">{editableNote.title}</h1>
+                        )}
                     </div>
-                ))}
 
-                {/* Add new note card */}
-                <div className="bg-white rounded-lg shadow-md border-2 border-dashed border-gray-300 flex items-center justify-center h-48 cursor-pointer hover:border-purple-400 transition-colors">
-                    <div className="text-center p-4">
-                        <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center mx-auto mb-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                        </div>
-                        <p className="text-gray-600">Add New Note</p>
+                    <div className="flex space-x-2">
+                        {isEditing ? (
+                            <button
+                                onClick={handleSaveNote}
+                                className="hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+                            >
+                                <Check size={20} />
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handlePinToggle}
+                                    className="hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+                                    title={editableNote.isPinned ? "Unpin from Quick Access" : "Pin to Quick Access"}
+                                >
+                                    {editableNote.isPinned ? <PinOff size={20} /> : <Pin size={20} />}
+                                </button>
+
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowColorPicker(!showColorPicker)}
+                                        className="hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+                                        title="Change note color"
+                                    >
+                                        <Palette size={20} />
+                                    </button>
+
+                                    {showColorPicker && (
+                                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg p-3 z-10">
+                                            <h4 className="text-gray-800 font-medium mb-2 text-sm">Choose color</h4>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {colorOptions.map((color) => (
+                                                    <button
+                                                        key={color.value}
+                                                        onClick={() => handleColorChange(color.value)}
+                                                        className={`${color.class} w-8 h-8 rounded-full hover:opacity-80 ${editableNote.color === color.value ? 'ring-2 ring-gray-400 ring-offset-2' : ''
+                                                            }`}
+                                                        title={color.name}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+                                    title="Edit note"
+                                >
+                                    <Pencil size={20} />
+                                </button>
+
+                                <button
+                                    onClick={() => onDeleteNote(editableNote.id)}
+                                    className="hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+                                    title="Delete note"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                            </>
+                        )}
+
+                        <button
+                            onClick={onBack}
+                            className="hover:bg-white hover:bg-opacity-20 rounded-full p-2 ml-2"
+                            title="Close"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
                 </div>
+
+                {/* Content */}
+                <div className="flex-1 bg-white p-6 overflow-y-auto" style={{ height: "calc(100% - 88px)" }}>
+                    {isEditing ? (
+                        <textarea
+                            value={editableNote.content}
+                            onChange={(e) => setEditableNote({ ...editableNote, content: e.target.value })}
+                            className="w-full h-full resize-none border-none focus:outline-none"
+                            placeholder="Ketik sesuatu..."
+                        />
+                    ) : (
+                        <div className="prose max-w-none">
+                            {editableNote.content || (
+                                <p className="text-gray-400 italic">
+                                    Catatan ini masih kosong. Klik ikon pensil untuk mengedit.
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
 

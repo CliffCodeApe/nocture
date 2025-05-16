@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import {
     Home,
     Mail,
@@ -7,16 +6,18 @@ import {
     Clock,
     Bell,
     Trash2,
-    Plus
+    Plus,
+    FileText
 } from 'lucide-react';
 
-const Sidebar = ({ activeView, setActiveView }) => {
+const Sidebar = ({ activeView, setActiveView, pinnedNotes = [], onAddNoteRequest }) => {
     const topMenuItems = [
         { icon: Home, label: 'Beranda', key: 'dashboard' },
         { icon: Mail, label: 'Inbox', key: 'inbox' },
         { icon: CheckSquare, label: 'Tugas', key: 'tasks' },
         { icon: Calendar, label: 'Kalender', key: 'calendar' },
-        { icon: Clock, label: 'Timer', key: 'timer' }, // Changed from 'pomodoro' to 'timer' to match Dashboard component
+        { icon: Clock, label: 'Timer', key: 'timer' },
+        { icon: FileText, label: 'Catatan', key: 'notes' },
     ];
 
     const bottomMenuItems = [
@@ -24,17 +25,20 @@ const Sidebar = ({ activeView, setActiveView }) => {
         { icon: Trash2, label: 'Sampah', key: 'trash' }
     ];
 
-    // Notes section
-    const notes = [
-        { color: 'purple', label: 'Riset Informatika', key: 'riset-informatika' },
-        { color: 'green', label: 'Praktikum Cyber', key: 'praktikum-cyber' },
-        { color: 'yellow', label: 'UNITY', key: 'unity' },
-    ];
-
+    // Notes color mapping
     const noteColors = {
         purple: 'bg-purple-800',
-        green: 'bg-green-500',
+        green: 'bg-green-600',
         yellow: 'bg-yellow-500',
+        red: 'bg-red-600',
+        blue: 'bg-blue-600',
+        teal: 'bg-teal-600',
+        pink: 'bg-pink-600'
+    };
+
+    const handleNoteClick = (note) => {
+        // Set active view to notes and pass the selected note ID
+        setActiveView(`note-${note.id}`);
     };
 
     return (
@@ -70,17 +74,30 @@ const Sidebar = ({ activeView, setActiveView }) => {
             <div className="px-3 mb-2">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-base font-medium text-gray-900">Catatan Saya</h3>
-                    <button className="flex items-center bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
+                    <button
+                        onClick={onAddNoteRequest}
+                        className="flex items-center bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs"
+                    >
                         <Plus size={14} className="mr-1" /> Tambah
                     </button>
                 </div>
 
-                {notes.map((note) => (
-                    <div key={note.key} className="flex items-center mb-2">
-                        <div className={`${noteColors[note.color]} w-4 h-4 rounded-sm mr-3`}></div>
-                        <span className="text-sm text-gray-800">{note.label}</span>
+                {pinnedNotes.length === 0 ? (
+                    <div className="text-xs text-gray-500 pl-2">
+                        Pin catatan untuk akses cepat
                     </div>
-                ))}
+                ) : (
+                    pinnedNotes.map((note) => (
+                        <div
+                            key={note.id}
+                            className="flex items-center mb-2 cursor-pointer hover:bg-gray-100 rounded p-1"
+                            onClick={() => handleNoteClick(note)}
+                        >
+                            <div className={`${noteColors[note.color]} w-4 h-4 rounded-sm mr-3`}></div>
+                            <span className="text-sm text-gray-800 truncate">{note.title}</span>
+                        </div>
+                    ))
+                )}
             </div>
 
             {/* Divider */}

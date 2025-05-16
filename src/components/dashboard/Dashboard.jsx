@@ -8,7 +8,9 @@ import CalendarView from './CalendarView';
 import CalendarPage from '../calendar/CalendarPage';
 import ReminderList from './ReminderList';
 import InboxContent from '../inbox/InboxContent';
-import TimerPage from '../timer/TimerPage'; // Import the new TimerPage component
+import TimerPage from '../timer/TimerPage';
+import NotePage from '../notes/NotesPage';
+import NotesModal from '../notes/NotesModal';
 
 // Helper function to format date to YYYY-MM-DD key (for marking dates)
 const formatDateToKey = (date) => {
@@ -47,11 +49,16 @@ const Dashboard = () => {
     const [isInboxOpen, setIsInboxOpen] = useState(false);
 
     // State for managing the shared Add/Edit Task Modal
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [taskModalMode, setTaskModalMode] = useState('add'); // 'add' or 'edit'
     const [taskToEdit, setTaskToEdit] = useState(null); // Task data for editing
-    const [modalInitialData, setModalInitialData] = useState(null); // For pre-filling fields like deadline
-    const [modalError, setModalError] = useState(null);
+    const [taskModalInitialData, setTaskModalInitialData] = useState(null); // For pre-filling fields like deadline
+    const [taskModalError, setTaskModalError] = useState(null);
+
+    // State for managing the Notes feature
+    const [activeNote, setActiveNote] = useState(null); // Currently displayed note (if any)
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false); // For Add/Edit Note modal
+    const [viewingNote, setViewingNote] = useState(false); // For viewing an existing note
 
     // --- Data Fetching ---
     const fetchDashboardCalendarData = async () => {
@@ -91,30 +98,73 @@ const Dashboard = () => {
             return;
         }
 
+        // Reset active note when changing to non-note views
+        if (!view.startsWith('note-')) {
+            setActiveNote(null);
+            setViewingNote(false);
+        }
+
         // Close inbox panel when navigating to other views
         setIsInboxOpen(false);
         setActiveView(view);
     };
 
-    // --- Modal Handling ---
-    // Function to open the modal, potentially with pre-filled data
-    const handleOpenModalRequest = (mode = 'add', taskData = null, initialData = null) => {
-        setModalMode(mode);
-        setTaskToEdit(taskData);
-        setModalInitialData(initialData); // Store initial data (e.g., { deadline: 'YYYY-MM-DD' })
-        setModalError(null);
-        setIsModalOpen(true);
+    // --- Notes Handling ---
+    const handleNoteSelect = (note) => {
+        setActiveNote(note);
+        setViewingNote(true);
+        setActiveView(`note-${note.id}`); // Mark as being in a specific note (no sidebar item will be active)
     };
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
+    const handleAddNoteClick = () => {
+        setIsNoteModalOpen(true);
+    };
+
+    const handleNoteModalClose = () => {
+        setIsNoteModalOpen(false);
+    };
+
+    const handleCloseNoteView = () => {
+        setViewingNote(false);
+        setActiveNote(null);
+        setActiveView('notes'); // Return to the notes grid view
+    };
+
+    const handleUpdateNote = (updatedNote) => {
+        console.log('Note updated:', updatedNote);
+        // Here you would update the note in your data source
+    };
+
+    const handleDeleteNote = (noteId) => {
+        console.log('Delete note:', noteId);
+        handleCloseNoteView();
+        // Here you would delete the note from your data source
+    };
+
+    const handleToggleNotePin = (note) => {
+        console.log('Toggle pin status:', note);
+        // Here you would update the pin status in your data source
+    };
+
+    // --- Task Modal Handling ---
+    // Function to open the modal, potentially with pre-filled data
+    const handleOpenTaskModalRequest = (mode = 'add', taskData = null, initialData = null) => {
+        setTaskModalMode(mode);
+        setTaskToEdit(taskData);
+        setTaskModalInitialData(initialData); // Store initial data (e.g., { deadline: 'YYYY-MM-DD' })
+        setTaskModalError(null);
+        setIsTaskModalOpen(true);
+    };
+
+    const handleCloseTaskModal = () => {
+        setIsTaskModalOpen(false);
         setTaskToEdit(null);
-        setModalInitialData(null); // Clear initial data
+        setTaskModalInitialData(null); // Clear initial data
     };
 
     // Function called after a task is saved (created or updated)
     const handleTaskSaved = () => {
-        handleCloseModal(); // Close modal on success
+        handleCloseTaskModal(); // Close modal on success
         // Refresh data relevant to the dashboard
         fetchDashboardCalendarData(); // Refresh calendar markers
         console.log("Task saved, dashboard calendar refreshed.");
@@ -126,11 +176,24 @@ const Dashboard = () => {
         console.log("Dashboard calendar date clicked:", clickedDate);
         const initialData = { deadline: formatDateForInput(clickedDate) };
         // Open modal in 'add' mode, passing the clicked date for pre-filling
-        handleOpenModalRequest('add', null, initialData);
+        handleOpenTaskModalRequest('add', null, initialData);
     };
 
     // --- Rendering Logic ---
     const renderContent = () => {
+        // If viewing a note, render the NotePage component as a modal
+        if (viewingNote && activeNote) {
+            return (
+                <NotePage
+                    note={activeNote}
+                    onBack={handleCloseNoteView}
+                    onTogglePin={handleToggleNotePin}
+                    onUpdateNote={handleUpdateNote}
+                    onDeleteNote={handleDeleteNote}
+                />
+            );
+        }
+
         switch (activeView) {
             case 'dashboard':
                 return (
@@ -140,7 +203,7 @@ const Dashboard = () => {
                             <div className="lg:col-span-2">
                                 <TaskTablePreview
                                     setActiveView={setActiveView}
-                                    onAddTaskRequest={() => handleOpenModalRequest('add')}
+                                    onAddTaskRequest={() => handleOpenTaskModalRequest('add')}
                                 />
                             </div>
                             <div>
@@ -149,7 +212,10 @@ const Dashboard = () => {
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div>
-                                <NotesGrid />
+                                <NotesGrid
+                                    onNoteSelect={handleNoteSelect}
+                                    onAddNote={handleAddNoteClick}
+                                />
                             </div>
                             <div className="lg:col-span-2">
                                 {loadingCalendar && <div className="text-center p-4">Memuat kalender...</div>}
@@ -167,10 +233,16 @@ const Dashboard = () => {
             case 'tasks':
                 return <TaskPage />;
             case 'notes':
-                return <NotesGrid fullView />;
+                return (
+                    <NotesGrid
+                        fullView
+                        onNoteSelect={handleNoteSelect}
+                        onAddNote={handleAddNoteClick}
+                    />
+                );
             case 'calendar':
                 return <CalendarPage />;
-            case 'timer': // Changed from 'pomodoro' to 'timer'
+            case 'timer':
                 return <TimerPage />;
             case 'notifications':
                 return <div className="p-6"><h1 className="text-2xl font-bold">Notifikasi</h1></div>;
@@ -184,7 +256,7 @@ const Dashboard = () => {
                             <div className="lg:col-span-2">
                                 <TaskTablePreview
                                     setActiveView={setActiveView}
-                                    onAddTaskRequest={() => handleOpenModalRequest('add')}
+                                    onAddTaskRequest={() => handleOpenTaskModalRequest('add')}
                                 />
                             </div>
                             <div>
@@ -193,7 +265,10 @@ const Dashboard = () => {
                         </div>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div>
-                                <NotesGrid />
+                                <NotesGrid
+                                    onNoteSelect={handleNoteSelect}
+                                    onAddNote={handleAddNoteClick}
+                                />
                             </div>
                             <div className="lg:col-span-2">
                                 {loadingCalendar && <div className="text-center p-4">Memuat kalender...</div>}
@@ -215,7 +290,12 @@ const Dashboard = () => {
 
     return (
         <div className="flex h-screen bg-gray-100">
-            <Sidebar activeView={activeView} setActiveView={handleViewChange} />
+            <Sidebar
+                activeView={activeView}
+                setActiveView={handleViewChange}
+                onNoteSelect={handleNoteSelect}
+                onAddNoteClick={handleAddNoteClick}
+            />
             <main className="flex-1 overflow-y-auto">
                 {renderContent()}
             </main>
@@ -229,14 +309,28 @@ const Dashboard = () => {
                 }}
             />
 
-            {/* Placeholder for the Task Modal */}
-            {/* {isModalOpen && (
+            {/* Note Modal for adding new notes */}
+            {isNoteModalOpen && (
+                <NotesModal
+                    isOpen={isNoteModalOpen}
+                    onClose={handleNoteModalClose}
+                    activeSidebarView={activeView}
+                    onSave={(noteData) => {
+                        console.log('Save note', noteData);
+                        handleNoteModalClose();
+                        // Logic to save note would go here
+                    }}
+                />
+            )}
+
+            {/* Task Modal Placeholder */}
+            {/* {isTaskModalOpen && (
                 <TaskModal
-                    isOpen={isModalOpen}
-                    mode={modalMode}
-                    initialData={modalInitialData}
+                    isOpen={isTaskModalOpen}
+                    mode={taskModalMode}
+                    initialData={taskModalInitialData}
                     taskData={taskToEdit}
-                    onClose={handleCloseModal}
+                    onClose={handleCloseTaskModal}
                     onSaveSuccess={handleTaskSaved}
                 />
             )} */}
