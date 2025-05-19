@@ -10,14 +10,13 @@ import {
     FileText
 } from 'lucide-react';
 
-const Sidebar = ({ activeView, setActiveView, pinnedNotes = [], onAddNoteRequest }) => {
+const Sidebar = ({ activeView, setActiveView, pinnedNotes, onNoteSelect, onAddNoteRequest }) => {
     const topMenuItems = [
         { icon: Home, label: 'Beranda', key: 'dashboard' },
         { icon: Mail, label: 'Inbox', key: 'inbox' },
         { icon: CheckSquare, label: 'Tugas', key: 'tasks' },
         { icon: Calendar, label: 'Kalender', key: 'calendar' },
         { icon: Clock, label: 'Timer', key: 'timer' },
-        { icon: FileText, label: 'Catatan', key: 'notes' },
     ];
 
     const bottomMenuItems = [
@@ -36,11 +35,6 @@ const Sidebar = ({ activeView, setActiveView, pinnedNotes = [], onAddNoteRequest
         pink: 'bg-pink-600'
     };
 
-    const handleNoteClick = (note) => {
-        // Set active view to notes and pass the selected note ID
-        setActiveView(`note-${note.id}`);
-    };
-
     return (
         <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
             <div className="p-6">
@@ -54,12 +48,12 @@ const Sidebar = ({ activeView, setActiveView, pinnedNotes = [], onAddNoteRequest
                         key={item.key}
                         onClick={() => setActiveView(item.key)}
                         className={`
-                            w-full flex items-center py-3 px-3 rounded-lg mb-1
-                            ${activeView === item.key
+              w-full flex items-center py-3 px-3 rounded-lg mb-1
+              ${activeView === item.key
                                 ? 'bg-purple-800 text-white'
                                 : 'hover:bg-gray-100 text-gray-800'}
-                            transition-colors duration-200
-                        `}
+              transition-colors duration-200
+            `}
                     >
                         <item.icon className="mr-3" size={20} />
                         <span className="text-sm font-medium">{item.label}</span>
@@ -91,7 +85,7 @@ const Sidebar = ({ activeView, setActiveView, pinnedNotes = [], onAddNoteRequest
                         <div
                             key={note.id}
                             className="flex items-center mb-2 cursor-pointer hover:bg-gray-100 rounded p-1"
-                            onClick={() => handleNoteClick(note)}
+                            onClick={() => onNoteSelect(note)}
                         >
                             <div className={`${noteColors[note.color]} w-4 h-4 rounded-sm mr-3`}></div>
                             <span className="text-sm text-gray-800 truncate">{note.title}</span>
@@ -110,12 +104,12 @@ const Sidebar = ({ activeView, setActiveView, pinnedNotes = [], onAddNoteRequest
                         key={item.key}
                         onClick={() => setActiveView(item.key)}
                         className={`
-                            w-full flex items-center py-3 px-3 rounded-lg mb-1
-                            ${activeView === item.key
+              w-full flex items-center py-3 px-3 rounded-lg mb-1
+              ${activeView === item.key
                                 ? 'bg-purple-800 text-white'
                                 : 'hover:bg-gray-100 text-gray-800'}
-                            transition-colors duration-200
-                        `}
+              transition-colors duration-200
+            `}
                     >
                         <item.icon className="mr-3" size={20} />
                         <span className="text-sm font-medium">{item.label}</span>

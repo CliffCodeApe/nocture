@@ -40,61 +40,70 @@ const formatDateForInput = (date) => {
 };
 
 const Dashboard = () => {
+    // Core state
     const [activeView, setActiveView] = useState('dashboard');
+    const [isInboxOpen, setIsInboxOpen] = useState(false);
+
+    // Notes state
+    const [notes, setNotes] = useState([]);
+    const [viewingNote, setViewingNote] = useState(false);
+    const [activeNote, setActiveNote] = useState(null);
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+
+    // Calendar state
     const [dashboardTasksByDate, setDashboardTasksByDate] = useState(new Map());
     const [loadingCalendar, setLoadingCalendar] = useState(true);
     const [errorCalendar, setErrorCalendar] = useState(null);
 
-    // State for the inbox panel
-    const [isInboxOpen, setIsInboxOpen] = useState(false);
-
-    // State for managing the shared Add/Edit Task Modal
+    // Task modal state
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-    const [taskModalMode, setTaskModalMode] = useState('add'); // 'add' or 'edit'
-    const [taskToEdit, setTaskToEdit] = useState(null); // Task data for editing
-    const [taskModalInitialData, setTaskModalInitialData] = useState(null); // For pre-filling fields like deadline
+    const [taskModalMode, setTaskModalMode] = useState('add');
+    const [taskToEdit, setTaskToEdit] = useState(null);
+    const [taskModalInitialData, setTaskModalInitialData] = useState(null);
     const [taskModalError, setTaskModalError] = useState(null);
 
-    // State for managing the Notes feature
-    const [activeNote, setActiveNote] = useState(null); // Currently displayed note (if any)
-    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false); // For Add/Edit Note modal
-    const [viewingNote, setViewingNote] = useState(false); // For viewing an existing note
-
-    // --- Data Fetching ---
-    const fetchDashboardCalendarData = async () => {
-        setLoadingCalendar(true);
-        setErrorCalendar(null);
-        try {
-            const fetchedTasks = await invoke('fetch_tasks');
-            const tasksMap = new Map();
-            fetchedTasks.forEach(task => {
-                if (task.deadline) {
-                    const dateKey = formatDateToKey(task.deadline);
-                    if (dateKey && !tasksMap.has(dateKey)) {
-                        tasksMap.set(dateKey, [true]); // Mark date as having tasks
-                    }
-                }
-            });
-            setDashboardTasksByDate(tasksMap);
-        } catch (err) {
-            console.error("Error fetching tasks for dashboard calendar:", err);
-            setErrorCalendar("Gagal memuat data kalender.");
-        } finally {
-            setLoadingCalendar(false);
+    // Load notes from localStorage on component mount
+    useEffect(() => {
+        const savedNotes = localStorage.getItem('notes');
+        if (savedNotes) {
+            setNotes(JSON.parse(savedNotes));
+        } else {
+            // Initialize with some default notes if none exist
+            const defaultNotes = [
+                { id: 1, title: 'Riset Informatika', content: 'Lorem ipsum is a placeholder text commonly used in the design industry to fill spaces with content resembling real written text.', color: 'purple', isPinned: true },
+                { id: 2, title: 'Praktikum Cyber', content: 'Notes tentang keamanan siber dan praktikumnya', color: 'green', isPinned: true },
+                { id: 3, title: 'UNITY', content: 'Unity game development notes', color: 'yellow', isPinned: true },
+                { id: 4, title: 'Machine Learning', content: 'Notes tentang machine learning project', color: 'blue', isPinned: false },
+                { id: 5, title: 'UI/UX Design', content: 'Design principles and patterns', color: 'pink', isPinned: false }
+            ];
+            setNotes(defaultNotes);
+            localStorage.setItem('notes', JSON.stringify(defaultNotes));
         }
-    };
+    }, []);
+
+    // Save notes to localStorage whenever they change
+    useEffect(() => {
+        if (notes.length > 0) {
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+    }, [notes]);
+
+    // Filter pinned notes for the sidebar
+    const pinnedNotes = notes.filter(note => note.isPinned);
 
     // Fetch calendar data on mount
     useEffect(() => {
         fetchDashboardCalendarData();
     }, []);
 
-    // --- View & Inbox Handling ---
+    // --- SIMPLIFIED HANDLERS ---
+
+    // View handling
     const handleViewChange = (view) => {
         // Special handling for inbox
         if (view === 'inbox') {
             setIsInboxOpen(true);
-            setActiveView('inbox'); // Set active view to inbox so it's highlighted
+            setActiveView('inbox');
             return;
         }
 
@@ -109,49 +118,43 @@ const Dashboard = () => {
         setActiveView(view);
     };
 
-    // --- Notes Handling ---
+    // Notes handling
     const handleNoteSelect = (note) => {
         setActiveNote(note);
         setViewingNote(true);
-        setActiveView(`note-${note.id}`); // Mark as being in a specific note (no sidebar item will be active)
+        setActiveView(`note-${note.id}`);
     };
 
-    const handleAddNoteClick = () => {
-        setIsNoteModalOpen(true);
+    const handleAddNote = (newNote) => {
+        setNotes([newNote, ...notes]);
     };
 
-    const handleNoteModalClose = () => {
-        setIsNoteModalOpen(false);
+    const handleUpdateNote = (updatedNote) => {
+        setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
+    };
+
+    const handleDeleteNote = (noteId) => {
+        setNotes(notes.filter(note => note.id !== noteId));
+        setViewingNote(false);
+        setActiveNote(null);
+        handleViewChange('dashboard');
+    };
+
+    const handleToggleNotePin = (updatedNote) => {
+        setNotes(notes.map(note => note.id === updatedNote.id ? updatedNote : note));
     };
 
     const handleCloseNoteView = () => {
         setViewingNote(false);
         setActiveNote(null);
-        setActiveView('notes'); // Return to the notes grid view
+        handleViewChange('dashboard');
     };
 
-    const handleUpdateNote = (updatedNote) => {
-        console.log('Note updated:', updatedNote);
-        // Here you would update the note in your data source
-    };
-
-    const handleDeleteNote = (noteId) => {
-        console.log('Delete note:', noteId);
-        handleCloseNoteView();
-        // Here you would delete the note from your data source
-    };
-
-    const handleToggleNotePin = (note) => {
-        console.log('Toggle pin status:', note);
-        // Here you would update the pin status in your data source
-    };
-
-    // --- Task Modal Handling ---
-    // Function to open the modal, potentially with pre-filled data
+    // Task modal handling
     const handleOpenTaskModalRequest = (mode = 'add', taskData = null, initialData = null) => {
         setTaskModalMode(mode);
         setTaskToEdit(taskData);
-        setTaskModalInitialData(initialData); // Store initial data (e.g., { deadline: 'YYYY-MM-DD' })
+        setTaskModalInitialData(initialData);
         setTaskModalError(null);
         setIsTaskModalOpen(true);
     };
@@ -159,29 +162,84 @@ const Dashboard = () => {
     const handleCloseTaskModal = () => {
         setIsTaskModalOpen(false);
         setTaskToEdit(null);
-        setTaskModalInitialData(null); // Clear initial data
+        setTaskModalInitialData(null);
     };
 
-    // Function called after a task is saved (created or updated)
     const handleTaskSaved = () => {
-        handleCloseTaskModal(); // Close modal on success
-        // Refresh data relevant to the dashboard
-        fetchDashboardCalendarData(); // Refresh calendar markers
-        console.log("Task saved, dashboard calendar refreshed.");
+        handleCloseTaskModal();
+        fetchDashboardCalendarData();
     };
 
-    // --- Event Handlers ---
-    // Handler for clicking a date on the dashboard calendar
+    // Calendar handling
     const handleDateClick = (clickedDate) => {
-        console.log("Dashboard calendar date clicked:", clickedDate);
         const initialData = { deadline: formatDateForInput(clickedDate) };
-        // Open modal in 'add' mode, passing the clicked date for pre-filling
         handleOpenTaskModalRequest('add', null, initialData);
     };
 
-    // --- Rendering Logic ---
+    // Data fetching
+    const fetchDashboardCalendarData = async () => {
+        setLoadingCalendar(true);
+        setErrorCalendar(null);
+        try {
+            const fetchedTasks = await invoke('fetch_tasks');
+            const tasksMap = new Map();
+            fetchedTasks.forEach(task => {
+                if (task.deadline) {
+                    const dateKey = formatDateToKey(task.deadline);
+                    if (dateKey && !tasksMap.has(dateKey)) {
+                        tasksMap.set(dateKey, [true]);
+                    }
+                }
+            });
+            setDashboardTasksByDate(tasksMap);
+        } catch (err) {
+            console.error("Error fetching tasks for dashboard calendar:", err);
+            setErrorCalendar("Gagal memuat data kalender.");
+        } finally {
+            setLoadingCalendar(false);
+        }
+    };
+
+    // Dashboard content rendering
+    const renderDashboardContent = () => (
+        <div className="p-6 space-y-6">
+            <h1 className="text-3xl font-bold text-gray-800">Halo! Siap untuk produktif?</h1>
+            <div className="grid grid-cols-5 gap-6">
+                <div className="col-span-3">
+                    <TaskTablePreview
+                        setActiveView={handleViewChange}
+                        onAddTaskRequest={() => handleOpenTaskModalRequest('add')}
+                    />
+                </div>
+                <div className="col-span-2">
+                    <ReminderList />
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+                <div>
+                    <NotesGrid
+                        notes={notes}
+                        onNoteSelect={handleNoteSelect}
+                        onAddNote={() => setIsNoteModalOpen(true)}
+                    />
+                </div>
+                <div>
+                    {loadingCalendar && <div className="text-center p-4">Memuat kalender...</div>}
+                    {errorCalendar && <div className="text-center p-4 text-red-600">{errorCalendar}</div>}
+                    {!loadingCalendar && !errorCalendar && (
+                        <CalendarView
+                            tasksByDate={dashboardTasksByDate}
+                            onDateClick={handleDateClick}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    // Main content rendering
     const renderContent = () => {
-        // If viewing a note, render the NotePage component as a modal
+        // If viewing a note, show the NotePage component
         if (viewingNote && activeNote) {
             return (
                 <NotePage
@@ -194,50 +252,20 @@ const Dashboard = () => {
             );
         }
 
+        // Otherwise, render based on active view
         switch (activeView) {
             case 'dashboard':
-                return (
-                    <div className="p-6 space-y-6">
-                        <h1 className="text-3xl font-bold text-gray-800">Halo! Siap untuk produktif?</h1>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-2">
-                                <TaskTablePreview
-                                    setActiveView={setActiveView}
-                                    onAddTaskRequest={() => handleOpenTaskModalRequest('add')}
-                                />
-                            </div>
-                            <div>
-                                <ReminderList />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div>
-                                <NotesGrid
-                                    onNoteSelect={handleNoteSelect}
-                                    onAddNote={handleAddNoteClick}
-                                />
-                            </div>
-                            <div className="lg:col-span-2">
-                                {loadingCalendar && <div className="text-center p-4">Memuat kalender...</div>}
-                                {errorCalendar && <div className="text-center p-4 text-red-600">{errorCalendar}</div>}
-                                {!loadingCalendar && !errorCalendar && (
-                                    <CalendarView
-                                        tasksByDate={dashboardTasksByDate}
-                                        onDateClick={handleDateClick}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
+            case 'inbox': // Both dashboard and inbox show the same content (dashboard is background of inbox)
+                return renderDashboardContent();
             case 'tasks':
                 return <TaskPage />;
             case 'notes':
                 return (
                     <NotesGrid
                         fullView
+                        notes={notes}
                         onNoteSelect={handleNoteSelect}
-                        onAddNote={handleAddNoteClick}
+                        onAddNote={() => setIsNoteModalOpen(true)}
                     />
                 );
             case 'calendar':
@@ -248,41 +276,6 @@ const Dashboard = () => {
                 return <div className="p-6"><h1 className="text-2xl font-bold">Notifikasi</h1></div>;
             case 'trash':
                 return <div className="p-6"><h1 className="text-2xl font-bold">Sampah</h1></div>;
-            case 'inbox':
-                return (
-                    <div className="p-6 space-y-6">
-                        <h1 className="text-3xl font-bold text-gray-800">Halo! Siap untuk produktif?</h1>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-2">
-                                <TaskTablePreview
-                                    setActiveView={setActiveView}
-                                    onAddTaskRequest={() => handleOpenTaskModalRequest('add')}
-                                />
-                            </div>
-                            <div>
-                                <ReminderList />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div>
-                                <NotesGrid
-                                    onNoteSelect={handleNoteSelect}
-                                    onAddNote={handleAddNoteClick}
-                                />
-                            </div>
-                            <div className="lg:col-span-2">
-                                {loadingCalendar && <div className="text-center p-4">Memuat kalender...</div>}
-                                {errorCalendar && <div className="text-center p-4 text-red-600">{errorCalendar}</div>}
-                                {!loadingCalendar && !errorCalendar && (
-                                    <CalendarView
-                                        tasksByDate={dashboardTasksByDate}
-                                        onDateClick={handleDateClick}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                );
             default:
                 return null;
         }
@@ -293,19 +286,20 @@ const Dashboard = () => {
             <Sidebar
                 activeView={activeView}
                 setActiveView={handleViewChange}
+                pinnedNotes={pinnedNotes}
                 onNoteSelect={handleNoteSelect}
-                onAddNoteClick={handleAddNoteClick}
+                onAddNoteRequest={() => setIsNoteModalOpen(true)}
             />
             <main className="flex-1 overflow-y-auto">
                 {renderContent()}
             </main>
 
-            {/* Render the InboxContent panel */}
+            {/* Inbox panel */}
             <InboxContent
                 isOpen={isInboxOpen}
                 onClose={() => {
                     setIsInboxOpen(false);
-                    setActiveView('dashboard'); // Return to dashboard when inbox is closed
+                    handleViewChange('dashboard');
                 }}
             />
 
@@ -313,27 +307,11 @@ const Dashboard = () => {
             {isNoteModalOpen && (
                 <NotesModal
                     isOpen={isNoteModalOpen}
-                    onClose={handleNoteModalClose}
+                    onClose={() => setIsNoteModalOpen(false)}
                     activeSidebarView={activeView}
-                    onSave={(noteData) => {
-                        console.log('Save note', noteData);
-                        handleNoteModalClose();
-                        // Logic to save note would go here
-                    }}
+                    onSave={handleAddNote}
                 />
             )}
-
-            {/* Task Modal Placeholder */}
-            {/* {isTaskModalOpen && (
-                <TaskModal
-                    isOpen={isTaskModalOpen}
-                    mode={taskModalMode}
-                    initialData={taskModalInitialData}
-                    taskData={taskToEdit}
-                    onClose={handleCloseTaskModal}
-                    onSaveSuccess={handleTaskSaved}
-                />
-            )} */}
         </div>
     );
 };

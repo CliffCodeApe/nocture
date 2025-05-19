@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 
-const NotesModal = ({ isOpen, onClose, onSave, activeSidebarView = "dashboard" }) => {
+const NotesModal = ({ isOpen, onClose, onSave }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [color, setColor] = useState('purple');
@@ -50,8 +50,9 @@ const NotesModal = ({ isOpen, onClose, onSave, activeSidebarView = "dashboard" }
 
     return (
         <div className="fixed inset-0 z-50 flex ml-64">
-            {/* Blurred background - positioned to cover just the content area */}
-            <div className="absolute inset-0 bg-transparent  backdrop-brightness-90 z-0"></div>
+            {/* Blurred background */}
+            <div className="absolute inset-0 bg-transparent backdrop-brightness-90 z-0"></div>
+
             {/* Modal content */}
             <div className="relative mx-auto my-auto bg-white rounded-lg shadow-xl max-w-3xl w-full h-5/6 z-10">
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
@@ -131,5 +132,6 @@ const NotesModal = ({ isOpen, onClose, onSave, activeSidebarView = "dashboard" }
         </div>
     );
 };
+
 
 export default NotesModal;
