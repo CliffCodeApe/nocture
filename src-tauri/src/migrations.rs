@@ -14,5 +14,15 @@ pub fn run_migrations(conn: &Connection) -> rusqlite::Result<()> {
         )",
         [],
     )?;
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            file_path TEXT UNIQUE NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )",
+        [],
+    )?;
     Ok(())
 }
