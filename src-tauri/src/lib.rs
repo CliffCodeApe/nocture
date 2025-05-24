@@ -9,10 +9,16 @@ pub mod migrations;
 
 // Import semua command yang relevan dan AppState dari module commands
 use commands::{
+    // Task Management
     create_task,
     fetch_tasks,
     update_task,
     delete_task,
+    // Notes
+    create_note,
+    fetch_notes,
+    update_note,
+    delete_note,
     AppState // Struct state yang berisi pool
 };
 
@@ -54,10 +60,16 @@ pub fn run() {
         .manage(state)
         // Daftarkan semua fungsi command yang bisa dipanggil dari frontend (JavaScript/React)
         .invoke_handler(tauri::generate_handler![
+            // Task Management
             create_task,
             fetch_tasks,
             update_task,
-            delete_task
+            delete_task,
+            // Notes
+            create_note,
+            fetch_notes,
+            update_note,
+            delete_note
         ])
         // Jalankan aplikasi Tauri dengan context yang digenerate
         .run(tauri::generate_context!())
