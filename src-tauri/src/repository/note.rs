@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 use crate::model::note::{Note, NotePayload};
 
 pub trait NoteRepository {
@@ -6,6 +6,7 @@ pub trait NoteRepository {
     fn fetch_all(&self, conn: &Connection) -> Result<Vec<Note>, rusqlite::Error>;
     fn update(&self, conn: &Connection, note: &Note) -> Result<(), rusqlite::Error>;
     fn delete(&self, conn: &Connection, id: i32) -> Result<(), rusqlite::Error>;
+    fn get_file_path_by_id(&self, conn: &Connection, id: i32) -> Result<Option<String>, rusqlite::Error>;
 }
 
 pub struct SqliteNoteRepository;
@@ -44,5 +45,11 @@ impl NoteRepository for SqliteNoteRepository {
     fn delete(&self, conn: &Connection, id: i32) -> Result<(), rusqlite::Error> {
         conn.execute("DELETE FROM notes WHERE id = ?1", [id])?;
         Ok(())
+    }
+
+    fn get_file_path_by_id(&self, conn: &Connection, id: i32) -> Result<Option<String>, rusqlite::Error> {
+        let mut stmt = conn.prepare("SELECT file_path FROM notes WHERE id = ?1")?;
+        let result = stmt.query_row([id], |row| row.get(0)).optional()?;
+        Ok(result)
     }
 }

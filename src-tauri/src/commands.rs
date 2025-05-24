@@ -118,10 +118,10 @@ pub fn fetch_notes(state: State<AppState>) -> Result<Vec<Note>, String> {
 }
 
 #[tauri::command]
-pub fn update_note(state: State<AppState>, note: Note) -> Result<(), String> {
+pub fn update_note(state: State<AppState>, note: Note, new_content: String) -> Result<(), String> {
     let conn = state.pool.get().map_err(|e| format!("Gagal mendapatkan koneksi dari pool: {}", e))?;
     let service = NoteServiceImpl { repository: SqliteNoteRepository };
-    service.update_note(&conn, note)
+    service.update_note(&conn, note, &new_content)
 }
 
 #[tauri::command]
