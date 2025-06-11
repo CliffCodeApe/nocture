@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler", // atau "node"
+    "allowSyntheticDefaultImports": true,
+    "strict": true, // Tambahkan ini untuk konsistensi
+    "types": ["node"] // Tambahkan tipe Node.js
+  },
+  "include": ["vite.config.js"] // Sesuaikan jika Anda menggunakan .ts
+}
